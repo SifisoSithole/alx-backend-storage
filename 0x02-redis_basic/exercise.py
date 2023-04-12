@@ -5,6 +5,26 @@ This module contains the `Cache` class
 import redis
 import uuid
 from typing import Any, Callable
+from functools import wraps
+
+
+def count_calls(method: Callable) -> Callable:
+    """
+    Counts how many times methods of the Cache class are called
+
+    args:
+        method (Callable): called method
+    return:
+        (Callable): return function that increments the count
+        for that key every time the method is called and returns
+        the value returned by the original method
+    """
+    @wraps(method)
+    def wrapper(self, *args, **kwds):
+        """function"""
+        self._redis.incr(method.__qualname__)
+        return method(self, *args, **kwds)
+    return wrapper
 
 
 class Cache:
@@ -27,6 +47,7 @@ class Cache:
         self._redis = redis.Redis()
         self._redis.flushdb()
 
+    @count_calls
     def store(self, data: Any) -> str:
         """
         Store data in the cache with a generated key
