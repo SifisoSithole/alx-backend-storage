@@ -7,6 +7,25 @@ import uuid
 from typing import Any, Callable
 from functools import wraps
 
+def call_history(method: Callable) -> Callable:
+    """
+    store the history of inputs and outputs for a particular function
+    args:
+        method (Callable): called method
+    """
+    key = method.__qualname__
+    inputs = key + ":inputs"
+    outputs = key + ":outputs"
+
+    @wraps(method)
+    def wrapper(self, *args, **kwds):
+        """ wrapped function """
+        self._redis.rpush(inputs, str(args))
+        data = method(self, *args, **kwds)
+        self._redis.rpush(outputs, str(data))
+        return data
+    return wrapper
+
 
 def count_calls(method: Callable) -> Callable:
     """
@@ -48,6 +67,7 @@ class Cache:
         self._redis.flushdb()
 
     @count_calls
+    @call_history
     def store(self, data: Any) -> str:
         """
         Store data in the cache with a generated key
