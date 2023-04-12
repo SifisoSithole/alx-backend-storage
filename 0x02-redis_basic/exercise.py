@@ -4,7 +4,7 @@ This module contains the `Cache` class
 """
 import redis
 import uuid
-from typing import Any
+from typing import Any, Callable
 
 
 class Cache:
@@ -15,7 +15,9 @@ class Cache:
         redis (Redis): A private variable that is an instance of Redis
 
     Methods:
-        store(data): Store data in the cache with a generated key.
+        store(data): Stores data in the cache with a generated key.
+        get(key, fn): Retrieve the value associated with a given key and
+        convert to a desired format if fn is provided
     """
 
     def __init__(self):
@@ -39,3 +41,56 @@ class Cache:
         key = str(uuid.uuid4())
         self._redis.set(key, data)
         return key
+
+    def get(self, key: str, fn: Callable[[bytes], Any] = None) -> Any:
+        """
+        Retrieve the value associated with a given key and
+        convert to a desired format if fn is provided
+
+        args:
+            key (str): Key for the value to retreive
+            fn (Callable): Function to convert the value to a desired format
+        return:
+            value (Any): Retreived value, converted to the desired format if
+            fn was provided
+        """
+        if type(key) is not str:
+            raise TypeError('key must be a string')
+        value = self._redis.get(key)
+        if not value:
+            return value
+        if fn:
+            if not callable(fn):
+                raise TypeError("fn must be a callable function")
+            value = fn(value)
+        return value
+
+    def get_str(self, key: str) -> str:
+        """
+        Retrieve the value associated with a given key and
+        convert it to a string
+
+        args:
+           key (str): Key for the value to retreive
+
+        return:
+            (str): retreived value
+        """
+        if type(key) is not str:
+            raise TypeError('key must be a string')
+        return self.get(key, str)
+
+    def get_int(self, key: str) -> int:
+        """
+        Retrieve the value associated with a given key and
+        convert it to an integer
+
+        args:
+           key (str): Key for the value to retreive
+
+        return:
+            (int): retreived value
+        """
+        if type(key) is not str:
+            raise TypeError('key must be a string')
+        return self.get(key, int)
