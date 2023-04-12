@@ -2,10 +2,11 @@
 """
 This module contains the `Cache` class
 """
-import redis
+import r
 import uuid
 from typing import Any, Callable
 from functools import wraps
+
 
 def call_history(method: Callable) -> Callable:
     """
@@ -51,7 +52,7 @@ class Cache:
     A class representing a cache for storing and retrieving data.
 
     Attributes:
-        redis (Redis): A private variable that is an instance of Redis
+        r (Redis): A private variable that is an instance of Redis
 
     Methods:
         store(data): Stores data in the cache with a generated key.
@@ -63,7 +64,7 @@ class Cache:
         """
         Initialize a new Cache object.
         """
-        self._redis = redis.Redis()
+        self._redis = r.Redis()
         self._redis.flushdb()
 
     @count_calls
@@ -135,3 +136,23 @@ class Cache:
         if type(key) is not str:
             raise TypeError('key must be a string')
         return self.get(key, int)
+
+
+def replay(method: Callable):
+    """
+    display the history of calls of a particular function
+    args:
+        method (Callable): called method
+    """
+    key = method.__qualname__
+    inputs = key + ":inputs"
+    outputs = key + ":outputs"
+    r = method.__self__._redis
+    count = r.get(key).decode("utf-8")
+    print("{} was called {} times:".format(key, count))
+    inputList = r.lrange(inputs, 0, -1)
+    outputList = r.lrange(outputs, 0, -1)
+    redis_zipped = list(zip(inputList, outputList))
+    for a, b in redis_zipped:
+        attr, data = a.decode("utf-8"), b.decode("utf-8")
+        print("{}(*{}) -> {}".format(key, attr, data))
