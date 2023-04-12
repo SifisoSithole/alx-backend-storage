@@ -23,6 +23,7 @@ class Cache:
         Initialize a new Cache object.
         """
         self._redis = redis.Redis()
+        self._redis.flushdb()
 
     def store(self, data: Any) -> str:
         """
