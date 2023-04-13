@@ -2,7 +2,7 @@
 """
 This module contains the `Cache` class
 """
-import r
+import redis
 import uuid
 from typing import Any, Callable
 from functools import wraps
