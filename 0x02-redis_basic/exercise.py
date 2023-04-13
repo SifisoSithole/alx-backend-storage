@@ -64,7 +64,7 @@ class Cache:
         """
         Initialize a new Cache object.
         """
-        self._redis = r.Redis()
+        self._redis = redis.Redis()
         self._redis.flushdb()
 
     @count_calls
